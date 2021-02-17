@@ -1,0 +1,76 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Description: Static website
+
+Parameters:
+  DomainName:
+    Description: Domain name of website
+    Type: String
+    Default: 'wearesecnet.com'
+  CertificateManagerCertificateArn:
+    Description: Arn of cert
+    Type: String
+    Default: 'ARN_GOES_HERE'
+
+Resources:
+
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Delete
+    Properties:
+      AccessControl: PublicRead
+      BucketName: !Sub '${AWS::StackName}'
+      WebsiteConfiguration:
+        ErrorDocument: 'index.html'
+        IndexDocument: 'index.html'
+
+  S3BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref S3Bucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Action: 's3:GetObject'
+            Principal: '*'
+            Resource: !Sub '${S3Bucket.Arn}/*'
+
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Aliases:
+         - !Ref DomainName
+        DefaultCacheBehavior:
+          ForwardedValues:
+            QueryString: true
+          TargetOriginId: !Sub 'S3-Website-${S3Bucket}.s3-website.${AWS::Region}.amazonaws.com'
+          ViewerProtocolPolicy: 'redirect-to-https'
+        DefaultRootObject: 'index.html'
+        Enabled: true
+        Origins:
+          - CustomOriginConfig:
+              OriginProtocolPolicy: 'http-only'
+            DomainName: !GetAtt S3Bucket.RegionalDomainName
+            Id: !Sub 'S3-Website-${S3Bucket}.s3-website.${AWS::Region}.amazonaws.com'
+        ViewerCertificate:
+          AcmCertificateArn: !Ref CertificateManagerCertificateArn
+          MinimumProtocolVersion: TLSv1.2_2019
+          SslSupportMethod: sni-only   
+
+  Route53RecordSetGroup:
+    Type: AWS::Route53::RecordSetGroup
+    Properties:
+      HostedZoneName: !Sub '${DomainName}.'
+      RecordSets:
+      - Name: !Ref DomainName
+        Type: A
+        AliasTarget:
+          DNSName: !GetAtt CloudFrontDistribution.DomainName
+          HostedZoneId: Z2FDTNDATAQYW2
+
+Outputs:
+  StackName:
+    Description: Name of Stack
+    Value: !Sub '${AWS::StackName}'
