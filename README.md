@@ -10,3 +10,4 @@ Below is a high level visual AR of the services being used:
 ![alt text](https://github.com/MikeBackman/Mike_Challenge/blob/main/Screenshot%202021-02-17%20at%201.36.20%20PM.png)
 
 
+The user will enter through Route53 which utilizes CloudFront. CloudFront will serve the static content that will be uploaded to S3. 
