@@ -69,8 +69,3 @@ Resources:
         AliasTarget:
           DNSName: !GetAtt CloudFrontDistribution.DomainName
           HostedZoneId: Z2FDTNDATAQYW2
-
-Outputs:
-  StackName:
-    Description: Name of Stack
-    Value: !Sub '${AWS::StackName}'
